@@ -28,9 +28,10 @@
     "easyrtc": "^1.1.0",
     "express": "^4.15.2",
     "ip": "^1.1.5",
-    "networked-aframe": "^0.1.0",
+    "networked-aframe": "^0.2.0",
     "shx": "^0.2.2",
     "socket.io": "^1.7.3",
+    "socket.io-client": "^1.7.3",
     "watchify": "^3.9.0"
   },
   "devDependencies": {

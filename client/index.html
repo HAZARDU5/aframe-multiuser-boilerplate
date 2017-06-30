@@ -1,47 +1,138 @@
-<!doctype html>
-  <html lang="en">
-    <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000">
-    <title>A-Frame Multiuser Boilerplate</title>
-    <link rel="manifest" href="manifest.webmanifest">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.5/socket.io.min.js"></script>
-    <script src="/js/index.js"></script>
-    <script src="easyrtc/easyrtc.js"></script>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dev Example — Networked-Aframe</title>
+  <meta name="description" content="Dev Example — Networked-Aframe">
 
-    <script>
-      function onConnect () {
-        console.log('on connect');
-        NAF.entities.createAvatar('#avatar-template', '0 1.6 0', '0 0 0');
-      }
+  <script src="https://aframe.io/releases/0.5.0/aframe.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+    <script src="https://cdn.rawgit.com/priologic/easyrtc/v1.1.0/api/easyrtc.js"></script>
+  <script src="https://unpkg.com/networked-aframe/dist/networked-aframe.min.js"></script>
+  <script src="https://unpkg.com/networked-aframe/server/static/js/spawn-in-circle.component.js"></script>
+  <script src="https://unpkg.com/aframe-randomizer-components@^3.0.1/dist/aframe-randomizer-components.min.js"></script>
+  <script src="https://unpkg.com/aframe-particle-system-component@1.0.5/dist/aframe-particle-system-component.min.js"></script>
+
+  <script>
+    console.warn('Networked-Aframe development example. `npm run build` creates build.js');
+
+    // Define custom schema for syncing avatar color, set by random-color
+    var headSchema = {
+      template: '#head-template',
+      components: [
+        'position',
+        'rotation',
+        {
+          selector: '.head',
+          component: 'material'
+        }
+      ]
+    };
+    NAF.schemas.add(headSchema);
+
+    // Called by Networked-Aframe when connected to server
+    function onConnect () {
+      console.log("onConnect");
+    }
+  </script>
+</head>
+<body>
+
+<a-scene networked-scene="
+      room: dev;
+      debug: true;
+    ">
+  <a-assets>
+
+    <img id="grid" src="https://img.gs/bbdkhfbzkk/stretch/https://i.imgur.com/25P1geh.png" crossorigin="anonymous">
+    <img id="sky" src="http://i.imgur.com/WqlqEkq.jpg" crossorigin="anonymous" />
+
+    <!-- Templates -->
+
+    <!-- Player -->
+    <script id="player-template" type="text/html">
+      <a-entity></a-entity>
     </script>
-  </head>
-  <body>
-    <a-scene network-scene="audio: false;">
-      <a-assets>
-        <!-- avatar template -->
-        <script id="avatar-template" type="text/html">
-          <a-entity class="avatar">
-            <a-sphere class="head" color="#5985ff" scale="0.25 0.2 0.2" random-color></a-sphere>
-            <a-entity class="face" position="0 0.05 0">
-              <a-sphere class="eye" color="#efefef" position="0.08 0.1 -0.10" scale="0.06 0.06 0.06">
-                <a-sphere class="pupil" color="#000" position="0 0 -1" scale="0.2 0.2 0.2"></a-sphere>
-              </a-sphere>
-              <a-sphere class="eye" color="#efefef" position="-0.08 0.1 -0.10" scale="0.06 0.06 0.06">
-                <a-sphere class="pupil" color="#000" position="0 0 -1" scale="0.2 0.2 0.2"></a-sphere>
-              </a-sphere>
-            </a-entity>
-          </a-entity>
-        </script>
-      </a-assets>
-      <a-gradient-sky material="shader: gradient; topColor: 127 204 255; bottomColor: 213 245 255"></a-gradient-sky>
 
-      <!-- ground -->
-      <a-entity geometry="primitive: circle; radius: 10;" rotation="-90 0 0" position="0 -0.1 0" material="color: #B2AD7D; metalness: 0.1; roughness: 0.8"></a-entity>
+    <!-- Head -->
+    <script id="head-template" type="text/html">
+      <a-entity class="avatar">
+        <a-sphere class="head"
+                  color="#5985ff"
+                  scale="0.3 0.35 0.25"
+                  random-color
+                ></a-sphere>
+        <a-entity class="face"
+                  position="0 0.05 0"
+                >
+          <a-sphere class="eye"
+                    color="#efefef"
+                    position="0.1 0.1 -0.2"
+                    scale="0.12 0.12 0.12"
+                  >
+            <a-sphere class="pupil"
+                      color="#000"
+                      position="0 0 -1"
+                      scale="0.2 0.2 0.2"
+                    ></a-sphere>
+          </a-sphere>
+          <a-sphere class="eye"
+                    color="#efefef"
+                    position="-0.1 0.1 -0.2"
+                    scale="0.12 0.12 0.12"
+                  >
+            <a-sphere class="pupil"
+                      color="#000"
+                      position="0 0 -1"
+                      scale="0.2 0.2 0.2"
+                    ></a-sphere>
+          </a-sphere>
+        </a-entity>
+      </a-entity>
+    </script>
 
-      <a-camera></a-camera>
-    </a-scene>
-  </body>
+    <!-- Hand -->
+    <script id="hand-template" type="text/html">
+      <a-box scale="0.1 0.1 0.1"></a-box>
+    </script>
+
+    <!-- /Templates -->
+  </a-assets>
+
+  <a-entity id="player" networked="template:#player-template;showLocalTemplate:false;" spawn-in-circle="radius:3" position="0 0 0" wasd-controls >
+    <a-entity camera look-controls networked="template:#head-template;showLocalTemplate:false;"></a-entity>
+
+    <a-entity id="left-hand" hand-controls="left" networked="template:#hand-template;showLocalTemplate:false;"></a-entity>
+    <a-entity id="right-hand" hand-controls="right" networked="template:#hand-template;showLocalTemplate:false;"></a-entity>
+  </a-entity>
+
+  <a-entity position="0 0 0"
+            geometry="primitive: plane; width: 10000; height: 10000;" rotation="-90 0 0"
+            material="src: #grid; repeat: 10000 10000; transparent: true; metalness:0.6; roughness: 0.4; sphericalEnvMap: #sky;"></a-entity>
+
+  <a-entity light="color: #ccccff; intensity: 1; type: ambient;" visible=""></a-entity>
+  <a-entity light="color: #ffaaff; intensity: 1.5" position="5 5 5"></a-entity>
+
+  <a-sky src="#sky" rotation="0 -90 0"></a-sky>
+  <a-entity id="particles" particle-system="preset: snow"></a-entity>
+</a-scene>
+
+<script>
+  // On mobile remove elements that are resource heavy
+  var isMobile = AFRAME.utils.device.isMobile();
+  var isPositionalTracking = AFRAME.utils.device.checkHasPositionalTracking();
+
+  if (isMobile) {
+    var particles = document.getElementById('particles');
+    particles.parentNode.removeChild(particles);
+  }
+
+    if(!isPositionalTracking){
+        var leftHand = document.getElementById('left-hand');
+        leftHand.parentNode.removeChild(leftHand);
+
+        var rightHand = document.getElementById('right-hand');
+        rightHand.parentNode.removeChild(rightHand);
+    }
+</script>
+</body>
 </html>

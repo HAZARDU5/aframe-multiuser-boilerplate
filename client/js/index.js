@@ -1,3 +1,1 @@
-var AFRAME = require('aframe');
-require('aframe-gradient-sky');
-require('networked-aframe');
+require('networked-aframe/server/static/js/spawn-in-circle.component');
