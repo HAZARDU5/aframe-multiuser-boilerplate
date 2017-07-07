@@ -1,41 +1,56 @@
-// Load required modules
-var http    = require("http");              // http server core module
-var express = require("express");           // web framework external module
-var serveStatic = require('serve-static');  // serve static files
-var socketIo = require("socket.io");        // web socket external module
-var easyrtc = require("easyrtc");               // EasyRTC external module
+const http = require('http');
+const path = require('path');
+
+const cors = require('cors');
+const easyrtc = require('easyrtc');
+const express = require('express');
+const ip = require('ip');
+const socketIo = require('socket.io');
+
+const HOST = process.env.HOST || '0.0.0.0';
+const PORT = process.env.PORT || 8080;
+const BUILD_DIR = path.join(__dirname, '..', '_build');
+const CLIENT_DIR = path.join(__dirname, '..', 'client');
 
 // Set process name
-process.title = "node-easyrtc";
+process.title = 'webvr-smasher';
 
-// Get port or default to 8080
-var port = process.env.PORT || 8080;
+// Set up and configure Express http server.
+// Expect the 'client' directory to be the web root.
+const app = express()
+    .options('*', cors())
+    .use(cors())
+    .use('/js/', express.static(BUILD_DIR))
+    .use('/', express.static(CLIENT_DIR));
 
-// Setup and configure Express http server. Expect a subfolder called "static" to be the web root.
-var app = express();
-app.use(serveStatic('server/static', {'index': ['index.html']}));
+const ENV = app.settings.env || process.env.NODE_ENV || 'development';
 
-// Start Express http server
-var webServer = http.createServer(app).listen(port);
+// Attach and start the Express http server.
+const webServer = http.createServer(app);
+webServer.listen(PORT, HOST, () => {
+    const serverHost = ENV === 'development' ? 'localhost' : ip.address();
+const serverPort = webServer.address().port;
+console.log('[%s] Listening on %s:%s', ENV, serverHost, serverPort);
+});
 
-// Start Socket.io so it attaches itself to Express server
-var socketServer = socketIo.listen(webServer, {"log level":1});
+// Start Socket.io so it attaches itself to the Express server.
+const socketServer = socketIo.listen(webServer, {'log level': 1});
 
 var myIceServers = [
-  {"url":"stun:stun.l.google.com:19302"},
-  {"url":"stun:stun1.l.google.com:19302"},
-  {"url":"stun:stun2.l.google.com:19302"},
-  {"url":"stun:stun3.l.google.com:19302"}
-  // {
-  //   "url":"turn:[ADDRESS]:[PORT]",
-  //   "username":"[USERNAME]",
-  //   "credential":"[CREDENTIAL]"
-  // },
-  // {
-  //   "url":"turn:[ADDRESS]:[PORT][?transport=tcp]",
-  //   "username":"[USERNAME]",
-  //   "credential":"[CREDENTIAL]"
-  // }
+    {"url":"stun:stun.l.google.com:19302"},
+    {"url":"stun:stun1.l.google.com:19302"},
+    {"url":"stun:stun2.l.google.com:19302"},
+    {"url":"stun:stun3.l.google.com:19302"}
+    // {
+    //   "url":"turn:[ADDRESS]:[PORT]",
+    //   "username":"[USERNAME]",
+    //   "credential":"[CREDENTIAL]"
+    // },
+    // {
+    //   "url":"turn:[ADDRESS]:[PORT][?transport=tcp]",
+    //   "username":"[USERNAME]",
+    //   "credential":"[CREDENTIAL]"
+    // }
 ];
 easyrtc.setOption("appIceServers", myIceServers);
 easyrtc.setOption("logLevel", "debug");
@@ -72,9 +87,4 @@ var rtc = easyrtc.listen(app, socketServer, null, function(err, rtcRef) {
 
         appObj.events.defaultListeners.roomCreate(appObj, creatorConnectionObj, roomName, roomOptions, callback);
     });
-});
-
-//listen on port
-webServer.listen(port, function () {
-    console.log('listening on http://localhost:' + port);
 });
